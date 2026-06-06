@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import logging
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
@@ -8,6 +9,8 @@ from typing import Any
 
 from spark_intelligence.config.loader import ConfigManager
 from spark_intelligence.state.db import StateDB
+
+LOGGER = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True)
@@ -81,6 +84,7 @@ def _load_builder_event_turns(
                 (channel_kind, session_id, max(turn_limit * 4, 12)),
             ).fetchall()
     except Exception:
+        LOGGER.warning("recent_conversation: query failed for %s/%s", channel_kind, session_id)
         return []
 
     transcript: list[RecentConversationTurn] = []

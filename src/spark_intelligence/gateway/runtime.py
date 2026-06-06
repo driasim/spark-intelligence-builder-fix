@@ -3,6 +3,7 @@ from __future__ import annotations
 import os
 import time
 import json
+import logging
 import urllib.error
 from dataclasses import dataclass
 from pathlib import Path
@@ -31,6 +32,7 @@ from spark_intelligence.observability.store import record_environment_snapshot
 from spark_intelligence.researcher_bridge import researcher_bridge_status
 from spark_intelligence.state.db import StateDB
 
+LOGGER = logging.getLogger(__name__)
 
 GATEWAY_BLOCKING_DOCTOR_CHECKS = {
     "home",
@@ -440,7 +442,11 @@ def gateway_simulate_telegram_update(
     as_json: bool = False,
     simulation: bool = True,
 ) -> str:
-    payload: dict[str, Any] = json.loads(update_path.read_text(encoding="utf-8-sig"))
+    try:
+        payload: dict[str, Any] = json.loads(update_path.read_text(encoding="utf-8-sig"))
+    except json.JSONDecodeError:
+        LOGGER.error("gateway: invalid JSON in update file %s", update_path)
+        return ""
     result = simulate_telegram_update(
         config_manager=config_manager,
         state_db=state_db,

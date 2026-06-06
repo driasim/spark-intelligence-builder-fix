@@ -3,6 +3,7 @@ from __future__ import annotations
 import base64
 import hashlib
 import json
+import logging
 import re
 from dataclasses import dataclass
 from datetime import datetime, timezone
@@ -14,6 +15,7 @@ from spark_intelligence.config.loader import ConfigManager
 from spark_intelligence.observability.store import close_run, open_run, record_event
 from spark_intelligence.state.db import StateDB
 
+LOGGER = logging.getLogger(__name__)
 
 _URL_RE = re.compile(r"https?://[^\s)]+", re.IGNORECASE)
 _VOICE_SPEAK_RE = re.compile(
@@ -410,6 +412,11 @@ def build_harness_runtime_snapshot(
     recent_runs: list[dict[str, Any]] = []
     for row in rows:
         run_kind = str(row["run_kind"] or "")
+        try:
+            summary_json = json.loads(str(row["summary_json"])) if row["summary_json"] else {}
+        except json.JSONDecodeError:
+            LOGGER.warning("harness_runtime: invalid summary_json for run_id=%s", row.get("run_id"))
+            summary_json = {}
         recent_runs.append(
             {
                 "run_id": str(row["run_id"]),
@@ -420,7 +427,7 @@ def build_harness_runtime_snapshot(
                 "opened_at": str(row["opened_at"]) if row["opened_at"] else None,
                 "closed_at": str(row["closed_at"]) if row["closed_at"] else None,
                 "close_reason": str(row["close_reason"]) if row["close_reason"] else None,
-                "summary_json": json.loads(str(row["summary_json"])) if row["summary_json"] else {},
+                "summary_json": summary_json,
             }
         )
     summary = {

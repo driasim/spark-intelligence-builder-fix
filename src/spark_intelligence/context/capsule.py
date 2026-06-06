@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 import re
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
@@ -18,6 +19,8 @@ from spark_intelligence.security.prompt_boundaries import sanitize_prompt_bounda
 from spark_intelligence.state.db import StateDB
 from spark_intelligence.system_registry import build_system_registry
 from spark_intelligence.workflow_recovery import latest_pending_tasks, latest_procedural_lessons
+
+LOGGER = logging.getLogger(__name__)
 
 
 _STATE_PREDICATE_LABELS: tuple[tuple[str, str], ...] = (
@@ -209,6 +212,7 @@ def _build_current_state_lines(
                 actor_id="context_capsule",
             )
         except Exception:
+            LOGGER.warning("capsule: inspect_human_memory_in_memory failed for %s", candidate)
             continue
         records = (inspection.read_result.records if inspection.read_result else None) or []
         if records:

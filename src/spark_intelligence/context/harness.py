@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 import re
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
@@ -8,6 +9,8 @@ from typing import Any, Literal
 
 ConversationRole = Literal["user", "assistant", "system", "tool"]
 ArtifactKind = Literal["list", "access_level", "mission", "plan", "unknown"]
+
+LOGGER = logging.getLogger(__name__)
 
 
 def estimate_tokens(text: str) -> int:
@@ -293,7 +296,8 @@ def retrieve_domain_chip_cold_context(
         return direct_items[: max(1, int(limit or 1))]
     try:
         from domain_chip_memory.builder_read_adapter import BuilderMemoryReadRequest, execute_builder_memory_read
-    except Exception:
+    except ImportError:
+        LOGGER.warning("harness: domain_chip_memory not available — skipping cold memory")
         return []
 
     items: list[ColdContextItem] = []

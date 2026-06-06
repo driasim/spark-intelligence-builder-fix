@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import logging
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
@@ -14,6 +15,7 @@ from spark_intelligence.llm_wiki.compile_system import compile_system_wiki
 from spark_intelligence.memory import hybrid_memory_retrieve, inspect_wiki_packet_metadata
 from spark_intelligence.state.db import StateDB
 
+LOGGER = logging.getLogger(__name__)
 
 BOOTSTRAP_WIKI_FILES: tuple[str, ...] = (
     "index.md",
@@ -168,7 +170,7 @@ def _wiki_retrieval_probe(*, config_manager: ConfigManager, state_db: StateDB) -
             source_surface="wiki_status_probe",
             record_activity=False,
         )
-    except Exception:
+    except (KeyError, TypeError, ValueError, AttributeError, RuntimeError):
         return "error", 0, False, {}
     wiki_lane = next(
         (
